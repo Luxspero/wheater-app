@@ -1,70 +1,63 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import { Alert, ScrollView, Text, View } from "react-native";
+import CustomInput from "@/components/CustomInput";
+import CustomButton from "@/components/CustomButton";
+import { BASE_URL, API_KEY } from "@/constants/Core";
+import { useEffect, useState } from "react";
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+export default function Index() {
+  const [output, setOutput] = useState("");
+  const [city, setCity] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [location, setLocation] = useState("");
 
-export default function HomeScreen() {
+  useEffect(() => {
+    getCity();
+  }, [setCity]); //BRILLIANT
+
+  const getCity = () => {
+    if (city === "") {
+      setLocation("");
+      setOutput("");
+
+      return;
+    }
+
+    setLoading(true);
+    fetch(`${BASE_URL}?q=${city}&appid=${API_KEY}&units=metric`)
+      .then((response) => response.json())
+      .then((data) => {
+        setOutput(JSON.stringify(data.main.temp, undefined, 2) + " °C");
+        setLocation(data.name + ", " + data.sys.country);
+      })
+      .catch((error) => {
+        Alert.alert("Error", error.message);
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  };
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
+    <View className="flex-1 items-center justify-center p-4 mt-10">
+      <View className="w-96 bg-white shadow rounded-lg p-4 mb-4">
+        <CustomInput
+          type="text"
+          label="City"
+          placeholder="Please enter City"
+          value={city}
+          onChangeText={(text: string) => setCity(text)}
         />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+        <CustomButton type="success" onPress={getCity}>
+          Get Location
+        </CustomButton>
+        <ScrollView>
+          <Text className="text-gray-700 mb-1 mt-4">
+            Status : {loading === true ? "..." : "Success"}
+          </Text>
+          <Text className="text-gray-700 mb-1 mt-4">Temperature: {output}</Text>
+          <Text className="text-gray-700 mb-1 mt-4">Location: {location}</Text>
+        </ScrollView>
+      </View>
+    </View>
   );
 }
-
-const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
-  },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
-  },
-});
